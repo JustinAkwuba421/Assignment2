@@ -66,7 +66,7 @@ This project follows a professional Git workflow:
 
 The website is automatically deployed to GitHub Pages using GitHub Actions when changes are pushed to the `main` branch.
 
-**Live Site**: [Your GitHub Pages URL will appear here]
+**Live Site**: https://justinakwuba421.github.io/Assignment2/
 
 ## Development Workflow
 
