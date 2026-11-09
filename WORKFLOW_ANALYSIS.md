@@ -1,49 +1,64 @@
-# GitHub Actions Workflow Analysis
+# GitHub Actions Workflow Analysis (typed in doc)
 
 Analysis of `.github/workflows/deploy.yml`.
 
 ## 1. What triggers this workflow to run?
 
-The `on:` section defines two triggers:
+The `on:` section has two triggers:
 
-- **`push` to `main`**: runs whenever commits land on `main`, including when a pull request is merged.
-- **`pull_request` targeting `main`**: runs when a pull request into `main` is opened, reopened, or gets new commits.
+- **`push` to `main`**: The workflow runs whenever new code is pushed to the `main` branch. This also happens when a pull request is merged.
+- **`pull_request` targeting `main`**: The workflow runs when someone opens a pull request, reopens it, or makes new changes to it.
+
+These triggers help check the code before it gets added to the main project.
 
 ## 2. What are the four main steps this workflow performs?
 
-The `build-and-test` job has four steps:
+The `build-and-test` job has four main steps:
 
-1. **Checkout code**
-2. **Validate HTML**
-3. **Check links**
-4. **Upload artifact**
+1. **Checkout code** – Gets the project files so GitHub Actions can use them.
+2. **Validate HTML** – Checks the HTML files for mistakes.
+3. **Check links** – Looks for broken links in the project.
+4. **Upload artifact** – Saves the website files so they can be used for deployment.
 
-A separate `deploy` job then runs one more step, **Deploy to GitHub Pages**, which publishes the uploaded artifact. That job only starts if `build-and-test` succeeds.
+There is also a separate `deploy` job. This job has one step called **Deploy to GitHub Pages**, which puts the website online.
+
+The deploy job only runs if the first job is successful.
 
 ## 3. What does the "Checkout code" step do and why is it necessary?
 
-It uses `actions/checkout@v4` to download the repository, at the commit that triggered the workflow, onto the GitHub Actions runner.
+The Checkout code step uses `actions/checkout@v4` to download the project files onto the GitHub Actions runner.
 
-It is necessary because each job starts on a fresh virtual machine that does not contain the project's files. Without this step, the validation, link check, and upload steps would have no code to work on.
+This is important because GitHub Actions starts with a fresh computer that does not already have the project files.
+
+Without this step, GitHub Actions would not be able to check the HTML, test the links, or upload the website files.
 
 ## 4. What is the purpose of the environment configuration?
 
-The `environment` block ties the `deploy` job to the `github-pages` deployment environment. `name: github-pages` tells GitHub which environment is being deployed to, and `url: ${{ steps.deployment.outputs.page_url }}` records the live site's address once the deployment finishes.
+The `environment` section tells GitHub that the project is being deployed to the `github-pages` environment.
 
-This lets GitHub track deployment history, show a link to the live site, and apply any rules set on that environment, such as which branches may deploy to it.
+- `name: github-pages` tells GitHub where the website is being deployed.
+- `url: ${{ steps.deployment.outputs.page_url }}` saves the website link after the deployment is finished.
+
+This makes it easier to find the live website and see when a deployment happens.
 
 ## 5. How does this automated deployment improve reliability compared to manual deployment?
 
-- **Checks run every time.** HTML validation runs before each deployment, so nobody can forget it.
-- **Failures stop the release.** `needs: build-and-test` means broken HTML never reaches the live site.
-- **The process is repeatable.** Every deployment follows the same steps on a clean machine, which removes "it worked on my computer" problems and manual copy mistakes.
-- **Only reviewed code goes live.** Deployment happens only from `main`, which is protected by pull requests.
-- **There is a record.** The Actions tab shows what was deployed, when, by which commit, and whether it passed.
+Automated deployment makes things easier and helps prevent mistakes.
 
-One limitation: the **Check links** step has `continue-on-error: true`, so a problem in that step is reported but does not block deployment.
+- **Automatic checks:** The workflow checks the HTML every time it runs.
+- **Stops failed deployments:** If the build-and-test job fails, the website will not be deployed.
+- **Same steps every time:** GitHub follows the same process each time, which helps avoid mistakes.
+- **Better control:** Changes are deployed from the `main` branch instead of every branch.
+- **Keeps a record:** GitHub shows when the workflow ran and if it was successful.
+
+One thing to remember is that the **Check links** step has `continue-on-error: true`. This means that even if the link check fails, the workflow can still continue.
 
 ## 6. What would happen if you pushed code to a different branch (not main)?
 
-The push alone would not start the workflow, because `on.push.branches` only lists `main`, and nothing would be deployed.
+If I pushed code to another branch besides `main`, the workflow would not run because it is only set to run when code is pushed to `main`.
 
-If that branch then had a pull request opened against `main`, the `pull_request` trigger would run `build-and-test` so the changes could be checked before merging. The `deploy` job would still be skipped, because its condition `github.event_name == 'push' && github.ref == 'refs/heads/main'` is false. The site only updates after the code reaches `main`.
+However, if I created a pull request to merge that branch into `main`, the workflow would run the build-and-test job to check the code.
+
+The deploy job would not run because the code has not been pushed to `main` yet.
+
+This is helpful because developers can test their changes before putting them on the live website.
